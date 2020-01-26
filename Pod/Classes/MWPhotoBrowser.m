@@ -1240,7 +1240,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
         // Fallback on earlier versions
     }
     _currentVideoPlayerViewController.player = [AVPlayer playerWithURL:videoURL];
-    
+    _currentVideoPlayerViewController.showsPlaybackControls = YES;
 //    [_currentVideoPlayerViewController.moviePlayer prepareToPlay];
 //    _currentVideoPlayerViewController.moviePlayer.shouldAutoplay = YES;
 //    _currentVideoPlayerViewController.moviePlayer.scalingMode = MPMovieScalingModeAspectFit;
@@ -1248,7 +1248,7 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     
     // Remove the movie player view controller from the "playback did finish" notification observers
     // Observe ourselves so we can get it to use the crossfade transition
-    [[NSNotificationCenter defaultCenter] removeObserver:_currentVideoPlayerViewController
+    [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:AVPlayerItemDidPlayToEndTimeNotification
                                                   object:_currentVideoPlayerViewController.player];
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -1257,6 +1257,10 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
                                                object:_currentVideoPlayerViewController.player];
 
     // Show
+//    [self.view addSubview:_currentVideoPlayerViewController.view];
+//    if (_currentVideoPlayerViewController.readyForDisplay) {
+//        [_currentVideoPlayerViewController.player play];
+//    }
     [self presentViewController:_currentVideoPlayerViewController animated:YES completion:nil];
 
 }
@@ -1671,10 +1675,13 @@ static void * MWVideoPlayerObservation = &MWVideoPlayerObservation;
     self.navigationController.navigationBar.userInteractionEnabled = YES;
 }
 
-- (void)playerViewControllerWillStopPictureInPicture:(AVPlayerViewController *)playerViewController {
+- (void)playerViewControllerDidStopPictureInPicture:(AVPlayerViewController *)playerViewController  API_AVAILABLE(ios(8.0)){
     
 }
 
+- (void)playerViewController:(AVPlayerViewController *)playerViewController willEndFullScreenPresentationWithAnimationCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator  API_AVAILABLE(ios(8.0)){
+    [self videoFinishedCallback:nil];
+}
 
 
 @end
