@@ -12,13 +12,13 @@
     "https://raw.github.com/mwaterfall/MWPhotoBrowser/master/Screenshots/MWPhotoBrowser5.png",
     "https://raw.github.com/mwaterfall/MWPhotoBrowser/master/Screenshots/MWPhotoBrowser6.png"
   ],
-  "homepage": "https://github.com/mwaterfall/MWPhotoBrowser",
+  "homepage": "https://github.com/oweimeio/MWPhotoBrowser",
   "authors": {
     "Michael Waterfall": "michaelwaterfall@gmail.com"
   },
   "social_media_url": "https://twitter.com/mwaterfall",
   "source": {
-    "git": "https://github.com/mwaterfall/MWPhotoBrowser.git",
+    "git": "https://github.com/oweimeio/MWPhotoBrowser.git",
     "tag": "2.1.2"
   },
   "platforms": {
@@ -35,19 +35,15 @@
     "ImageIO",
     "QuartzCore",
     "AssetsLibrary",
-    "MediaPlayer"
+    "AVFoundation"
   ],
   "weak_frameworks": "Photos",
   "dependencies": {
-    "MBProgressHUD": [
-      "~> 0.9"
-    ],
-    "DACircularProgress": [
-      "~> 2.3"
+    "SVProgressHUD": [
+
     ],
     "SDWebImage": [
-      "~> 3.7",
-      "!= 3.7.2"
+      "~> 4.0"
     ]
   }
 }

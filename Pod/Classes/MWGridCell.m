@@ -6,7 +6,7 @@
 //
 //
 
-#import <DACircularProgress/DACircularProgressView.h>
+#import "MWCircularProgressView.h"
 #import "MWGridCell.h"
 #import "MWCommon.h"
 #import "MWPhotoBrowserPrivate.h"
@@ -19,7 +19,7 @@
     UIImageView *_imageView;
     UIImageView *_videoIndicator;
     UIImageView *_loadingError;
-	DACircularProgressView *_loadingIndicator;
+	MWCircularProgressView *_loadingIndicator;
     UIButton *_selectedButton;
     
 }
@@ -63,7 +63,7 @@
         [self addSubview:_selectedButton];
     
 		// Loading indicator
-		_loadingIndicator = [[DACircularProgressView alloc] initWithFrame:CGRectMake(0, 0, 40.0f, 40.0f)];
+		_loadingIndicator = [[MWCircularProgressView alloc] initWithFrame:CGRectMake(0, 0, 40.0f, 40.0f)];
         _loadingIndicator.userInteractionEnabled = NO;
         _loadingIndicator.thicknessRatio = 0.1;
         _loadingIndicator.roundedCorners = NO;

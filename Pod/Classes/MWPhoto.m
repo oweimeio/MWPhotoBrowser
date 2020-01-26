@@ -6,17 +6,17 @@
 //  Copyright 2010 d3i. All rights reserved.
 //
 
-#import <SDWebImage/SDWebImageDecoder.h>
 #import <SDWebImage/SDWebImageManager.h>
 #import <SDWebImage/SDWebImageOperation.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 #import "MWPhoto.h"
 #import "MWPhotoBrowser.h"
 
+API_AVAILABLE(ios(8))
 @interface MWPhoto () {
 
     BOOL _loadingInProgress;
-    id <SDWebImageOperation> _webImageOperation;
+    SDWebImageDownloadToken *_webImageDownloadToken;
     PHImageRequestID _assetRequestID;
     PHImageRequestID _assetVideoRequestID;
         
@@ -45,7 +45,7 @@
     return [[MWPhoto alloc] initWithURL:url];
 }
 
-+ (MWPhoto *)photoWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize {
++ (MWPhoto *)photoWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize  API_AVAILABLE(ios(8)){
     return [[MWPhoto alloc] initWithAsset:asset targetSize:targetSize];
 }
 
@@ -79,7 +79,7 @@
     return self;
 }
 
-- (id)initWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize {
+- (id)initWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize  API_AVAILABLE(ios(8)){
     if ((self = [super init])) {
         self.asset = asset;
         self.assetTargetSize = targetSize;
@@ -100,8 +100,16 @@
 }
 
 - (void)setup {
-    _assetRequestID = PHInvalidImageRequestID;
-    _assetVideoRequestID = PHInvalidImageRequestID;
+    if (@available(iOS 8, *)) {
+        _assetRequestID = PHInvalidImageRequestID;
+    } else {
+        // Fallback on earlier versions
+    }
+    if (@available(iOS 8, *)) {
+        _assetVideoRequestID = PHInvalidImageRequestID;
+    } else {
+        // Fallback on earlier versions
+    }
 }
 
 - (void)dealloc {
@@ -118,24 +126,28 @@
 - (void)getVideoURL:(void (^)(NSURL *url))completion {
     if (_videoURL) {
         completion(_videoURL);
-    } else if (_asset && _asset.mediaType == PHAssetMediaTypeVideo) {
-        [self cancelVideoRequest]; // Cancel any existing
-        PHVideoRequestOptions *options = [PHVideoRequestOptions new];
-        options.networkAccessAllowed = YES;
-        typeof(self) __weak weakSelf = self;
-        _assetVideoRequestID = [[PHImageManager defaultManager] requestAVAssetForVideo:_asset options:options resultHandler:^(AVAsset *asset, AVAudioMix *audioMix, NSDictionary *info) {
-            
-            // dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{ // Testing
-            typeof(self) strongSelf = weakSelf;
-            if (!strongSelf) return;
-            strongSelf->_assetVideoRequestID = PHInvalidImageRequestID;
-            if ([asset isKindOfClass:[AVURLAsset class]]) {
-                completion(((AVURLAsset *)asset).URL);
-            } else {
-                completion(nil);
-            }
-            
-        }];
+    } else if (@available(iOS 8, *)) {
+        if (_asset && _asset.mediaType == PHAssetMediaTypeVideo) {
+            [self cancelVideoRequest]; // Cancel any existing
+            PHVideoRequestOptions *options = [PHVideoRequestOptions new];
+            options.networkAccessAllowed = YES;
+            typeof(self) __weak weakSelf = self;
+            _assetVideoRequestID = [[PHImageManager defaultManager] requestAVAssetForVideo:_asset options:options resultHandler:^(AVAsset *asset, AVAudioMix *audioMix, NSDictionary *info) {
+                
+                // dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{ // Testing
+                typeof(self) strongSelf = weakSelf;
+                if (!strongSelf) return;
+                strongSelf->_assetVideoRequestID = PHInvalidImageRequestID;
+                if ([asset isKindOfClass:[AVURLAsset class]]) {
+                    completion(((AVURLAsset *)asset).URL);
+                } else {
+                    completion(nil);
+                }
+                
+            }];
+        }
+    } else {
+        // Fallback on earlier versions
     }
 }
 
@@ -198,7 +210,11 @@
     } else if (_asset) {
         
         // Load from photos asset
-        [self _performLoadUnderlyingImageAndNotifyWithAsset: _asset targetSize:_assetTargetSize];
+        if (@available(iOS 8, *)) {
+            [self _performLoadUnderlyingImageAndNotifyWithAsset: _asset targetSize:_assetTargetSize];
+        } else {
+            // Fallback on earlier versions
+        }
         
     } else {
         
@@ -212,30 +228,27 @@
 - (void)_performLoadUnderlyingImageAndNotifyWithWebURL:(NSURL *)url {
     @try {
         SDWebImageManager *manager = [SDWebImageManager sharedManager];
-        _webImageOperation = [manager downloadImageWithURL:url
-                                                   options:0
-                                                  progress:^(NSInteger receivedSize, NSInteger expectedSize) {
-                                                      if (expectedSize > 0) {
-                                                          float progress = receivedSize / (float)expectedSize;
-                                                          NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                                                                [NSNumber numberWithFloat:progress], @"progress",
-                                                                                self, @"photo", nil];
-                                                          [[NSNotificationCenter defaultCenter] postNotificationName:MWPHOTO_PROGRESS_NOTIFICATION object:dict];
-                                                      }
-                                                  }
-                                                 completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
-                                                     if (error) {
-                                                         MWLog(@"SDWebImage failed to download image: %@", error);
-                                                     }
-                                                     _webImageOperation = nil;
-                                                     self.underlyingImage = image;
-                                                     dispatch_async(dispatch_get_main_queue(), ^{
-                                                         [self imageLoadingComplete];
-                                                     });
-                                                 }];
+        _webImageDownloadToken = [manager.imageDownloader downloadImageWithURL:url options:0 progress:^(NSInteger receivedSize, NSInteger expectedSize, NSURL * _Nullable targetURL) {
+            if (expectedSize > 0) {
+                float progress = receivedSize / (float)expectedSize;
+                NSDictionary* dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                                      [NSNumber numberWithFloat:progress], @"progress",
+                                      self, @"photo", nil];
+                [[NSNotificationCenter defaultCenter] postNotificationName:MWPHOTO_PROGRESS_NOTIFICATION object:dict];
+            }
+        } completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
+            if (error) {
+                MWLog(@"SDWebImage failed to download image: %@", error);
+            }
+            self->_webImageDownloadToken = nil;
+            self.underlyingImage = image;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self imageLoadingComplete];
+            });
+        }];
     } @catch (NSException *e) {
         MWLog(@"Photo from web: %@", e);
-        _webImageOperation = nil;
+        _webImageDownloadToken = nil;
         [self imageLoadingComplete];
     }
 }
@@ -246,7 +259,7 @@
         @autoreleasepool {
             @try {
                 self.underlyingImage = [UIImage imageWithContentsOfFile:url.path];
-                if (!_underlyingImage) {
+                if (!self->_underlyingImage) {
                     MWLog(@"Error loading photo from path: %@", url.path);
                 }
             } @finally {
@@ -285,7 +298,7 @@
 }
 
 // Load from photos library
-- (void)_performLoadUnderlyingImageAndNotifyWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize {
+- (void)_performLoadUnderlyingImageAndNotifyWithAsset:(PHAsset *)asset targetSize:(CGSize)targetSize  API_AVAILABLE(ios(8)){
     
     PHImageManager *imageManager = [PHImageManager defaultManager];
     
@@ -330,8 +343,8 @@
 }
 
 - (void)cancelAnyLoading {
-    if (_webImageOperation != nil) {
-        [_webImageOperation cancel];
+    if (_webImageDownloadToken != nil) {
+        [_webImageDownloadToken cancel];
         _loadingInProgress = NO;
     }
     [self cancelImageRequest];
@@ -339,16 +352,24 @@
 }
 
 - (void)cancelImageRequest {
-    if (_assetRequestID != PHInvalidImageRequestID) {
-        [[PHImageManager defaultManager] cancelImageRequest:_assetRequestID];
-        _assetRequestID = PHInvalidImageRequestID;
+    if (@available(iOS 8, *)) {
+        if (_assetRequestID != PHInvalidImageRequestID) {
+            [[PHImageManager defaultManager] cancelImageRequest:_assetRequestID];
+            _assetRequestID = PHInvalidImageRequestID;
+        }
+    } else {
+        // Fallback on earlier versions
     }
 }
 
 - (void)cancelVideoRequest {
-    if (_assetVideoRequestID != PHInvalidImageRequestID) {
-        [[PHImageManager defaultManager] cancelImageRequest:_assetVideoRequestID];
-        _assetVideoRequestID = PHInvalidImageRequestID;
+    if (@available(iOS 8, *)) {
+        if (_assetVideoRequestID != PHInvalidImageRequestID) {
+            [[PHImageManager defaultManager] cancelImageRequest:_assetVideoRequestID];
+            _assetVideoRequestID = PHInvalidImageRequestID;
+        }
+    } else {
+        // Fallback on earlier versions
     }
 }
 
