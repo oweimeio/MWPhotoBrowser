@@ -7,6 +7,7 @@ end
 
 target 'MWPhotoBrowser_Tests' do
   pod "MWPhotoBrowser", :path => "../"
+  #, :git => 'https://github.com/oweimeio/MWPhotoBrowser.git'
 #
 #  pod 'Specta'
 #  pod 'Expecta'

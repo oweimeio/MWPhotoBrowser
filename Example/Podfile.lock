@@ -1,5 +1,5 @@
 PODS:
-  - MWPhotoBrowser (2.1.2):
+  - MWPhotoBrowser (2.1.3):
     - SDWebImage (~> 4.0)
     - SVProgressHUD
   - SDWebImage (4.4.7):
@@ -20,10 +20,10 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  MWPhotoBrowser: 15008ce6ac9270902441f430b0f8634061561f0c
+  MWPhotoBrowser: afa6232b9f98e7986721731479869adb3ab03a54
   SDWebImage: c10d14a8883ebd89664f02a422006f66a85c0c5d
   SVProgressHUD: 1428aafac632c1f86f62aa4243ec12008d7a51d6
 
-PODFILE CHECKSUM: ca826b784b4b0812ffbce1eb999836cf0acc4bd4
+PODFILE CHECKSUM: 5ff8e581b7ecf22a6b8e83e9be0e39a4b950d22e
 
 COCOAPODS: 1.8.4
